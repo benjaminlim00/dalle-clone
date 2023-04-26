@@ -1,33 +1,63 @@
-import { useState } from 'react';
-import viteLogo from '/vite.svg';
+import { Box, TextField } from '@mui/material';
 import Button from '@mui/material/Button';
+import { grey } from '@mui/material/colors';
+import { useState } from 'react';
 
 function App() {
-  const [count, setCount] = useState(0);
+  const [text, setText] = useState('');
 
   return (
-    <>
-      <div>
-        <a href='https://vitejs.dev' target='_blank'>
-          <img src={viteLogo} className='logo' alt='Vite logo' />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className='card'>
+    <Box
+      sx={{
+        background: grey[900],
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          height: '3rem',
+        }}
+      >
+        <TextField
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          variant='outlined'
+          placeholder='Describe your image and I will draw it out!'
+          sx={{
+            background: grey[800],
+            borderRadius: 2,
+            width: '30rem',
+            mr: 1,
+
+            '& .MuiOutlinedInput-root': {
+              '&:hover fieldset': {
+                borderRadius: 2,
+                borderColor: (theme) => theme.palette.primary.main,
+              },
+            },
+
+            input: {
+              color: 'white',
+            },
+          }}
+        />
         <Button
+          sx={{
+            height: '100%',
+          }}
           variant='contained'
-          onClick={() => setCount((count) => count + 1)}
+          // onClick={() => setCount((count) => count + 1)}
         >
-          count is {count}
+          generate
         </Button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className='read-the-docs'>
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+      </Box>
+    </Box>
   );
 }
 
