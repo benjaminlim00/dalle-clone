@@ -28,6 +28,7 @@ app.post('/generate-image', async (req, res) => {
     res.send(response.data.data);
   } catch (error) {
     console.error(error);
+    res.status(500).send('Server error');
   }
 });
 
@@ -68,6 +69,7 @@ app.post('/variations', async (req, res) => {
     res.send(response.data.data);
   } catch (error) {
     console.error(error);
+    res.status(500).send('Server error');
   }
 });
 
