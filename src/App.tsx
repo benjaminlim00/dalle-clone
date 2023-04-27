@@ -1,4 +1,12 @@
-import { Alert, Box, Grid, Modal, Snackbar, TextField } from '@mui/material';
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  Grid,
+  Modal,
+  Snackbar,
+  TextField,
+} from '@mui/material';
 import Button from '@mui/material/Button';
 import { grey } from '@mui/material/colors';
 import { useState } from 'react';
@@ -13,6 +21,7 @@ function App() {
   >([]);
   const [snackBarOpen, setSnackBarOpen] = useState(false);
   const [modal, setModal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const openSnackBar = () => {
     setSnackBarOpen(true);
@@ -78,6 +87,7 @@ function App() {
       return;
     }
 
+    setLoading(true);
     try {
       const options = {
         method: 'POST',
@@ -91,6 +101,8 @@ function App() {
       setImages(data);
     } catch (error) {
       console.warn(error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -223,6 +235,14 @@ function App() {
         </Button>
       </Box>
 
+      {loading && (
+        <CircularProgress
+          sx={{
+            my: 8,
+          }}
+        />
+      )}
+
       {images.length !== 0 && (
         <Grid
           sx={{ mt: 4, width: '40rem' }}
@@ -250,7 +270,11 @@ function App() {
           cursor: 'pointer',
         }}
       >
-        <span>
+        <span
+          style={{
+            cursor: 'pointer',
+          }}
+        >
           <label htmlFor='files'>Or, upload an image to edit</label>
           <input
             onChange={onUploadImage}
