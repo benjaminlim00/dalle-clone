@@ -1,10 +1,98 @@
-import { Box, TextField } from '@mui/material';
+import { Alert, Box, Grid, Modal, Snackbar, TextField } from '@mui/material';
 import Button from '@mui/material/Button';
 import { grey } from '@mui/material/colors';
 import { useState } from 'react';
 
 function App() {
-  const [text, setText] = useState('');
+  const [prompt, setPrompt] = useState('');
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [images, setImages] = useState<
+    {
+      url: string;
+    }[]
+  >([]);
+  const [snackBarOpen, setSnackBarOpen] = useState(false);
+  const [modal, setModal] = useState(false);
+
+  const openSnackBar = () => {
+    setSnackBarOpen(true);
+  };
+
+  const closeSnackBar = () => {
+    setSnackBarOpen(false);
+  };
+
+  const onUploadImage = async (e) => {
+    const image = e.target.files[0];
+    const formData = new FormData();
+
+    formData.append('file', image);
+    setSelectedImage(image);
+    setModal(true);
+
+    //reset file input
+    e.target.value = null;
+
+    try {
+      const options = {
+        method: 'POST',
+        body: formData,
+      };
+      // upload image to BE
+      await fetch('http://localhost:8000/upload-image', options);
+      // const data = await res.json();
+      // console.log('🚀 - BEN | file: App.tsx:53 | onUploadImage | data:', data);
+    } catch (error) {
+      console.warn(error);
+    }
+  };
+
+  const generateVariations = async () => {
+    //safety check
+    setImages([]);
+    if (!selectedImage) {
+      setModal(false);
+      return;
+    }
+
+    try {
+      const options = {
+        method: 'POST',
+      };
+      const res = await fetch('http://localhost:8000/variations', options);
+      const data = await res.json();
+      console.log(
+        '🚀 - BEN | file: App.tsx:63 | generateVariations | data:',
+        data
+      );
+      setImages(data);
+      setModal(false);
+    } catch (error) {
+      console.warn(error);
+    }
+  };
+
+  const onPrompt = async () => {
+    if (!prompt) {
+      openSnackBar();
+      return;
+    }
+
+    try {
+      const options = {
+        method: 'POST',
+        body: JSON.stringify({ prompt: prompt }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+      const res = await fetch('http://localhost:8000/generate-image', options);
+      const data = await res.json();
+      setImages(data);
+    } catch (error) {
+      console.warn(error);
+    }
+  };
 
   return (
     <Box
@@ -17,6 +105,83 @@ function App() {
         alignItems: 'center',
       }}
     >
+      <Modal
+        open={modal && selectedImage}
+        onClose={() => setSelectedImage(null)}
+        aria-labelledby='modal-selected-image'
+      >
+        <>
+          {modal && selectedImage && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '40rem',
+                bgcolor: grey[900],
+                p: 4,
+                borderRadius: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+              }}
+            >
+              <Alert variant='filled' severity='info'>
+                Image must be 256x256 in size!
+              </Alert>
+
+              <Box
+                component={'img'}
+                src={URL.createObjectURL(selectedImage)}
+                alt='selected-image'
+                loading='lazy'
+                sx={{ width: '15rem', height: '15rem', mt: 4 }}
+              />
+              <Button
+                sx={{
+                  mt: 4,
+                  width: '15rem',
+                }}
+                color='primary'
+                variant='contained'
+                onClick={generateVariations}
+              >
+                generate
+              </Button>
+              <Button
+                sx={{
+                  mt: 1,
+                  width: '15rem',
+                }}
+                color='secondary'
+                variant='contained'
+                onClick={() => {
+                  setSelectedImage(null);
+                  setModal(false);
+                }}
+              >
+                upload new image
+              </Button>
+            </Box>
+          )}
+        </>
+      </Modal>
+
+      <Snackbar
+        open={snackBarOpen}
+        autoHideDuration={6000}
+        onClose={closeSnackBar}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'center',
+        }}
+      >
+        <Alert variant='filled' severity='warning'>
+          Please enter an image description
+        </Alert>
+      </Snackbar>
+
       <Box
         sx={{
           display: 'flex',
@@ -25,8 +190,8 @@ function App() {
         }}
       >
         <TextField
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
           variant='outlined'
           placeholder='Describe your image and I will draw it out!'
           sx={{
@@ -36,8 +201,8 @@ function App() {
             mr: 1,
 
             '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
               '&:hover fieldset': {
-                borderRadius: 2,
                 borderColor: (theme) => theme.palette.primary.main,
               },
             },
@@ -52,10 +217,49 @@ function App() {
             height: '100%',
           }}
           variant='contained'
-          // onClick={() => setCount((count) => count + 1)}
+          onClick={onPrompt}
         >
           generate
         </Button>
+      </Box>
+
+      {images.length !== 0 && (
+        <Grid
+          sx={{ mt: 4, width: '40rem' }}
+          container
+          spacing={2}
+          justifyContent='center'
+        >
+          {images.map((image) => (
+            <Grid
+              item
+              key={image.url}
+              component={'img'}
+              src={`${image.url}`}
+              alt={image.url}
+              loading='lazy'
+              sx={{ width: '15rem', height: '15rem' }}
+            />
+          ))}
+        </Grid>
+      )}
+
+      <Box
+        sx={{
+          mt: 2,
+          cursor: 'pointer',
+        }}
+      >
+        <span>
+          <label htmlFor='files'>Or, upload an image to edit</label>
+          <input
+            onChange={onUploadImage}
+            id='files'
+            accept='images/*'
+            type='file'
+            hidden
+          />
+        </span>
       </Box>
     </Box>
   );
